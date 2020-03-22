@@ -1,0 +1,39 @@
+version: '3'
+services:
+  thumbor:
+    image: minimalcompact/thumbor
+    environment:
+      - MAX_AGE=False 
+      - THUMBOR_PORT=81
+      # VIRTUAL_HOST is picked up by nginx-proxy. Here it's set for localhost
+      # but you usually need to point it to your domain, e.g. thumbor.example.com
+      - VIRTUAL_HOST=localhost
+      # THUMBOR_NUM_PROCESSES control how many processes run inside the container
+      # Normally this is set in connection with the number of CPU cores
+      # Note however that you can also use the docker-compose scale option to dynamically
+      # scale your thumbor instances
+      - THUMBOR_NUM_PROCESSES=4
+      # this would allow CORS from any origin (you can restrict to specific origins if you want)
+      - CORS_ALLOW_ORIGIN=*
+      # returns a webp image if browser Accept headers match
+      - AUTO_WEBP=True
+      # nginx-proxy does caching automatically, so no need to store the result storage cache
+      # (this greatly speeds up and saves on CPU)
+      - RESULT_STORAGE=thumbor.result_storages.no_storage
+      - RESULT_STORAGE_STORES_UNSAFE=True
+      - STORAGE=thumbor.storages.file_storage
+      - RESPECT_ORIENTATION=True
+      - REQUEST_TIMEOUT_SECONDS=20
+      - HTTP_LOADER_REQUEST_TIMEOUT=20
+    restart: always
+    ports:
+      - "81:81"
+  
+  nginx-thumbor:
+    image: yunusabd/nginx-thumbor
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - "thumbor"
+
